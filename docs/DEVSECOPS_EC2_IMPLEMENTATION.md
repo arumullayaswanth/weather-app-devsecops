@@ -1,112 +1,248 @@
-# DevSecOps Pipeline for This Weather App
+# DevSecOps for This Weather App
 
-## 1. Current Application Architecture
+## 1. What is this project?
 
-This repository is a React single-page application that:
+This project is a weather website made using React.
 
-- calls the OpenWeather API directly from the browser
-- builds into static files with `react-scripts`
-- can be served from Nginx inside a Docker container
-- can be deployed to Kubernetes on a single EC2 instance running `k3s`
+It works like this:
 
-Current code observations from this repo:
+- user types a city name
+- app asks OpenWeather for weather data
+- app shows the result on the screen
 
-- the original app hardcoded the OpenWeather API key in `src/App.js`
-- the project had no Dockerfile, no Kubernetes manifests, and no working Jenkins pipeline definition
-- the app imports `react-awesome-button`, `react-leaflet`, and `leaflet`, but those packages were missing from `package.json`
-- there are no unit tests yet, so the pipeline is prepared for tests but will currently pass with `--passWithNoTests`
+Later, we can:
 
-## 2. Real Modern DevSecOps Architecture
+- build the app
+- scan it for security problems
+- put it inside Docker
+- deploy it to Kubernetes on EC2
 
-Your simplified flow is correct, but the real pipeline used in modern DevSecOps is usually this:
+So the short story is:
 
-`Developer -> GitHub/GitLab -> CI Orchestrator -> Secrets/SAST/SCA/IaC scans -> Container build -> Container scan -> Image registry -> Kubernetes deploy -> DAST -> Runtime security and monitoring`
+`Code -> Check -> Build -> Push -> Deploy`
 
-For your project on one EC2 instance, the practical architecture is:
+## 2. What is DevSecOps?
 
-`Developer push -> GitHub webhook -> Jenkins on EC2 -> SonarQube/Snyk/Gitleaks/Checkov/Trivy -> Docker image -> Amazon ECR -> update Kubernetes YAML in Git -> k3s on same EC2 -> OWASP ZAP baseline scan -> Falco runtime monitoring`
+DevSecOps is a simple idea:
 
-This is the security purpose of each category:
+- `Dev` means writing code
+- `Sec` means security
+- `Ops` means deployment and running the app
 
-| Category | Tool | What it checks |
+Meaning:
+
+We do security checks in every step, not only at the end.
+
+## 3. Pipeline flow
+
+Your pipeline for this project is:
+
+`Developer -> GitHub -> Jenkins -> Security Scans -> Docker Build -> Amazon ECR -> Update Kubernetes File -> Deploy to Kubernetes on EC2 -> OWASP ZAP Scan -> Falco Monitoring`
+
+Very simple explanation:
+
+1. You write code.
+2. You push code to GitHub.
+3. Jenkins starts automatically.
+4. Jenkins checks code and security.
+5. Jenkins builds Docker image.
+6. Jenkins pushes image to Amazon ECR.
+7. Jenkins updates Kubernetes deployment file with the new image version.
+8. Kubernetes runs the new app.
+9. OWASP ZAP checks the live website.
+10. Falco watches runtime activity.
+
+## 4. Tools and jobs
+
+| Tool | Job | Easy meaning |
 | --- | --- | --- |
-| SAST | SonarQube | code quality issues, bugs, maintainability, insecure patterns |
-| Dependency Scan | Snyk | vulnerable npm packages and transitive dependencies |
-| Secrets Scan | Gitleaks | hardcoded API keys, tokens, passwords |
-| Container Scan | Trivy | OS and package vulnerabilities inside the image |
-| IaC Security | Checkov | insecure Kubernetes YAML and infrastructure definitions |
-| DAST | OWASP ZAP | issues visible from the running application surface |
-| Runtime Security | Falco | suspicious behavior after deployment inside Kubernetes |
+| GitHub | source code | stores your project |
+| Jenkins | CI/CD | runs pipeline automatically |
+| SonarQube | SAST | checks code quality and risky code |
+| Snyk | dependency scan | checks npm packages for vulnerabilities |
+| Gitleaks | secrets scan | finds keys, passwords, tokens in code |
+| Trivy | container scan | checks Docker image for vulnerabilities |
+| Checkov | IaC scan | checks Kubernetes YAML for mistakes |
+| Docker | build image | packs app into a container |
+| Amazon ECR | image registry | stores Docker images |
+| Kubernetes / k3s | deployment | runs the app |
+| OWASP ZAP | DAST | tests the running app from outside |
+| Falco | runtime security | watches the cluster after deployment |
 
-## 3. Important Security Reality for This App
+## 5. Why each security check is used
 
-This repo is a frontend-only app. That means the weather API key is not a true backend secret. Even if you pass it through Jenkins and Docker build arguments, the key is still delivered to the browser and can be seen by users.
+### SonarQube
 
-So there are two levels of improvement:
+Checks the code itself.
 
-1. Better than current state:
-   remove the key from Git and inject it during CI build using Jenkins credentials
-2. Real secret protection:
-   move the OpenWeather call to a backend service or API gateway and let the frontend call that backend instead
+Finds things like:
 
-For your current repo, this implementation uses level 1 because it matches the existing architecture with minimal code change.
+- bad code quality
+- code smells
+- risky coding patterns
 
-## 4. Files Added for This Pipeline
+### Snyk
 
-- `jenkins/Jenkinsfile` -> full Jenkins pipeline
-- `Dockerfile` -> multi-stage React build and Nginx runtime
-- `nginx.conf` -> SPA routing support
-- `k8s/namespace.yaml` -> namespace
-- `k8s/deployment.yaml` -> Kubernetes deployment
-- `k8s/service.yaml` -> NodePort service
-- `sonar-project.properties` -> SonarQube scan config
-- `.gitleaks.toml` -> Gitleaks config entry
-- `.env.example` -> local environment variable example
+Checks packages from `package.json`.
 
-## 5. End-to-End Pipeline Flow for This Repo
+Finds things like:
 
-When a developer pushes code:
+- old vulnerable libraries
 
-1. GitHub triggers Jenkins through webhook.
-2. Jenkins checks out the repository.
-3. Gitleaks scans the source for exposed secrets.
-4. `npm install` installs dependencies.
-5. Jest test stage runs.
-6. `npm run build` creates the production React build.
-7. SonarQube performs SAST and quality analysis.
-8. Snyk performs dependency scanning.
-9. Docker builds the application image.
-10. Trivy scans the built image.
-11. Checkov scans Kubernetes manifests in `k8s/`.
-12. Jenkins pushes the image to Amazon ECR.
-13. Jenkins updates `k8s/deployment.yaml` with the new image tag and pushes that change to GitHub.
-14. Jenkins deploys the manifests to Kubernetes on the EC2 instance.
-15. OWASP ZAP runs a baseline DAST scan against the deployed app.
-16. Falco monitors runtime events after deployment.
+### Gitleaks
 
-## 6. EC2 Deployment Plan
+Checks if secrets are written in code.
 
-### Recommended EC2 sizing
+Finds things like:
 
-If Jenkins, SonarQube, Docker, and k3s all run on one instance, use at least:
+- API keys
+- passwords
+- tokens
+
+### Trivy
+
+Checks the Docker image.
+
+Finds things like:
+
+- vulnerable OS packages
+- risky software in the image
+
+### Checkov
+
+Checks Kubernetes YAML files.
+
+Finds things like:
+
+- bad security settings
+- weak deployment config
+
+### OWASP ZAP
+
+Checks the live website after deployment.
+
+Finds things like:
+
+- common web security issues
+- missing security headers
+
+### Falco
+
+Watches the app after it is running.
+
+Finds things like:
+
+- suspicious processes
+- strange runtime behavior
+
+## 6. Important truth about this app
+
+This app is a frontend app.
+
+So even if we remove the API key from GitHub, the browser can still see the key when the frontend uses it.
+
+That means:
+
+- removing the key from code is good
+- using Jenkins secret is better than hardcoding
+- but it is still not a fully hidden backend secret
+
+Real best solution later:
+
+`React frontend -> backend API -> OpenWeather API`
+
+That way the key stays on the server, not in the browser.
+
+## 7. Files added for the pipeline
+
+These files were added:
+
+- [jenkins/Jenkinsfile](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/jenkins/Jenkinsfile#L1) = Jenkins pipeline
+- [Dockerfile](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/Dockerfile#L1) = Docker build file
+- [nginx.conf](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/nginx.conf#L1) = Nginx config
+- [k8s/namespace.yaml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/k8s/namespace.yaml#L1) = namespace
+- [k8s/deployment.yaml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/k8s/deployment.yaml#L1) = deployment
+- [k8s/service.yaml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/k8s/service.yaml#L1) = service
+- [sonar-project.properties](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/sonar-project.properties#L1) = SonarQube config
+- [.gitleaks.toml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/.gitleaks.toml#L1) = Gitleaks config
+- [.env.example](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/.env.example#L1) = sample env file
+
+## 8. Jenkins pipeline stages
+
+Jenkins runs these stages:
+
+1. `Checkout`
+   Downloads code from GitHub.
+2. `Secrets Scan`
+   Gitleaks checks if secrets are in the code.
+3. `Install Dependencies`
+   npm installs the packages.
+4. `Test`
+   Project tests run.
+5. `Build Frontend`
+   React production build is created.
+6. `SAST`
+   SonarQube scans the code.
+7. `Dependency Scan`
+   Snyk scans the packages.
+8. `Container Build`
+   Docker builds image.
+9. `Container Scan`
+   Trivy scans image.
+10. `ECR Image Pushing`
+   Docker image is pushed to Amazon ECR.
+11. `IaC Security Scan`
+   Checkov scans Kubernetes files.
+12. `Update Deployment file`
+   Jenkins updates image tag in deployment YAML and pushes it to GitHub.
+13. `Deploy to Kubernetes`
+   Kubernetes applies the YAML files.
+14. `DAST`
+   OWASP ZAP scans the running app.
+
+## 9. Your EC2 plan
+
+You said you want one EC2 instance.
+
+That is okay for:
+
+- demo project
+- learning
+- practice
+
+This EC2 instance will run:
+
+- Jenkins
+- SonarQube
+- Docker
+- k3s
+- scanners
+
+### Good EC2 size
+
+Use:
 
 - `t3.large` minimum
-- `t3.xlarge` preferred for smoother SonarQube and Jenkins builds
-- 30 to 50 GB EBS
+- `t3.xlarge` better
+- `30 GB` or more disk
 
-### Security group ports
+## 10. AWS security group ports
 
-Open only what you need:
+Open these ports:
 
 - `22` for SSH
 - `8080` for Jenkins
 - `9000` for SonarQube
-- `30080` for the weather app NodePort
-- optionally `80/443` if later using Ingress or reverse proxy
+- `30080` for your weather app
 
-## 7. Install the Stack on EC2
+If you later use Ingress:
 
-Use Ubuntu 22.04 on EC2.
+- `80`
+- `443`
+
+## 11. Install software on EC2
+
+Use Ubuntu 22.04.
 
 ### Install Docker
 
@@ -117,17 +253,14 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker ubuntu
 ```
 
-Log out and log in again after adding the user to the Docker group.
+Logout and login again after this.
 
 ### Install Java and Jenkins
 
 ```bash
 sudo apt install -y fontconfig openjdk-17-jre
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
-  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt update
 sudo apt install -y jenkins
 sudo systemctl enable --now jenkins
@@ -146,34 +279,36 @@ sudo kubectl get nodes
 sudo mkdir -p /var/lib/jenkins/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml /var/lib/jenkins/.kube/config
 sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
-sudo sed -i 's/127.0.0.1/localhost/g' /var/lib/jenkins/.kube/config
 ```
 
-### Install scanners
+### Install these tools too
 
-Install these CLIs on the EC2 instance so Jenkins can use them:
+Install:
 
 - `gitleaks`
 - `trivy`
 - `snyk`
 - `checkov`
 - `sonar-scanner`
+- `aws cli`
 
-### Run SonarQube
+## 12. Start SonarQube
 
-The simplest approach is Docker:
+Easy command:
 
 ```bash
-docker run -d --name sonarqube \
-  -p 9000:9000 \
-  sonarqube:lts-community
+docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
 ```
 
-Then open `http://EC2_PUBLIC_IP:9000`, create the project, and generate a token for Jenkins.
+Then open:
 
-### Install Falco
+`http://EC2_PUBLIC_IP:9000`
 
-Falco is runtime security and is not part of the build itself. Install it into k3s:
+## 13. Start Falco
+
+Falco watches runtime activity.
+
+Install with Helm:
 
 ```bash
 helm repo add falcosecurity https://falcosecurity.github.io/charts
@@ -181,9 +316,11 @@ helm repo update
 helm install falco falcosecurity/falco -n falco --create-namespace
 ```
 
-## 8. Configure Jenkins
+## 14. Jenkins setup
 
-### Required Jenkins plugins
+### Install Jenkins plugins
+
+Install:
 
 - Pipeline
 - Git
@@ -191,55 +328,64 @@ helm install falco falcosecurity/falco -n falco --create-namespace
 - Docker Pipeline
 - SonarQube Scanner
 
-### Jenkins credentials to create
+### Add Jenkins credentials
 
-Create these credentials in Jenkins:
+Create these:
 
-- `snyk-token` -> Snyk API token
-- `openweather-api-key` -> OpenWeather API key
-- `my-git-pattoken` -> GitHub personal access token for pushing manifest updates
+- `openweather-api-key`
+- `snyk-token`
+- `my-git-pattoken`
 
-For ECR authentication, use one of these:
+For Amazon ECR:
 
-- attach an IAM role to the EC2 instance that allows ECR login and push
-- or configure Jenkins/AWS CLI credentials on the instance
+- best way is attach IAM role to EC2
+- or configure AWS credentials in Jenkins
 
-Also configure SonarQube in:
+### Add SonarQube server in Jenkins
 
-- `Manage Jenkins -> System -> SonarQube servers`
+Go to:
 
-Name it exactly:
+`Manage Jenkins -> System -> SonarQube servers`
 
-- `sonarqube`
+Use this name:
 
-### Jenkins pipeline job
+`sonarqube`
 
-Create a Pipeline job and point it to:
+### Create pipeline job
 
-- repository: your GitHub repo
-- script path: `jenkins/Jenkinsfile`
+In Jenkins:
 
-Add a GitHub webhook:
+- create Pipeline job
+- connect GitHub repo
+- use script path `jenkins/Jenkinsfile`
 
-- `http://EC2_PUBLIC_IP:8080/github-webhook/`
+### Add GitHub webhook
 
-## 9. How Kubernetes Deployment Works Here
+Use:
 
-This repo deploys as:
+`http://EC2_PUBLIC_IP:8080/github-webhook/`
 
-- one namespace: `weather-app`
-- one deployment: `weather-app`
-- one NodePort service: `30080`
+## 15. How deployment works
 
-The app becomes reachable at:
+The app is deployed using:
 
-- `http://EC2_PUBLIC_IP:30080`
+- namespace YAML
+- deployment YAML
+- service YAML
 
-That same URL is used in the Jenkins `APP_URL` variable for OWASP ZAP scanning.
+Jenkins updates the image version in:
 
-## 10. Commands You Will Run on EC2 for First Deployment
+- [k8s/deployment.yaml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/k8s/deployment.yaml#L1)
 
-After cloning the repo on the EC2 instance:
+Then Kubernetes runs the latest image.
+
+Your app will open at:
+
+`http://EC2_PUBLIC_IP:30080`
+
+## 16. First deployment commands
+
+Run:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
@@ -248,41 +394,44 @@ kubectl apply -f k8s/service.yaml
 kubectl -n weather-app get all
 ```
 
-If Jenkins already pushed a new image, the pipeline updates it with:
+## 17. Things you must change
 
-```bash
-kubectl -n weather-app set image deployment/weather-app \
-  weather-app=docker.io/your-dockerhub-username/weather-app:BUILD_NUMBER
-kubectl -n weather-app rollout status deployment/weather-app
-```
-
-## 11. What You Must Change Before Running This for Real
-
-Update these placeholders:
+Before real use, change:
 
 - `EC2_PUBLIC_IP` in `jenkins/Jenkinsfile`
+- ECR values if account, region, or repo name changes
+- GitHub repo name if your repo name is different
 
-If your ECR repository name or AWS account ID differs, also update:
-
-- `ECR_REGISTRY` in `jenkins/Jenkinsfile`
-- `ECR_REPOSITORY` in `jenkins/Jenkinsfile`
-- the image value in `k8s/deployment.yaml`
-
-Install dependencies and regenerate the lock file once:
+Also run:
 
 ```bash
 npm install
 ```
 
-Then commit the updated `package-lock.json`. After that, you can improve the pipeline by replacing `npm install` with `npm ci`.
+Then commit the new `package-lock.json`.
 
-## 12. Recommended Next Improvement
+Later you can use `npm ci` in Jenkins.
 
-If you want this to look like a stronger real-world DevSecOps project in interviews or demos, add a small backend service:
+## 18. One warning
 
-- frontend calls backend
-- backend calls OpenWeather
-- API key stays only on the server
-- Kubernetes secret becomes meaningful
+Jenkins updates the deployment file and pushes it back to GitHub.
 
-That changes the design from "better repo hygiene" to "real secret protection".
+This can trigger the pipeline again.
+
+That can create a loop.
+
+To reduce this:
+
+- commit message uses `[skip ci]`
+- or keep Kubernetes YAML in another repo
+- or add Jenkins filters
+
+Best real-world method:
+
+Keep app code and deployment manifests in different repos.
+
+## 19. Easy explanation for your project
+
+You can explain your project like this:
+
+"I built a React weather app. When I push code to GitHub, Jenkins starts automatically. Jenkins checks secrets, code quality, dependencies, Docker image security, and Kubernetes file security. Then Jenkins builds the Docker image, pushes it to Amazon ECR, updates the Kubernetes deployment file, deploys the app to k3s on EC2, runs OWASP ZAP on the live app, and uses Falco for runtime monitoring."
