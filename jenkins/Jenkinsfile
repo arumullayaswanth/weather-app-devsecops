@@ -1,0 +1,144 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-1'
+    ECR_REGISTRY = '242201296943.dkr.ecr.us-east-1.amazonaws.com'
+    ECR_REPOSITORY = 'weather-app'
+    IMAGE_NAME = 'weather-app'
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+    IMAGE_FULL = "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
+    APP_URL = 'http://EC2_PUBLIC_IP:30080'
+    CI = 'true'
+  }
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Secrets Scan') {
+      steps {
+        sh 'gitleaks detect --source . --no-git'
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm install'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'CI=true npm test -- --watchAll=false --passWithNoTests'
+      }
+    }
+
+    stage('Build Frontend') {
+      steps {
+        withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
+          sh 'npm run build'
+        }
+      }
+    }
+
+    stage('SAST') {
+      steps {
+        withSonarQubeEnv('sonarqube') {
+          sh 'sonar-scanner'
+        }
+      }
+    }
+
+    stage('Dependency Scan') {
+      steps {
+        withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+          sh 'snyk auth ${SNYK_TOKEN}'
+          sh 'snyk test --severity-threshold=high'
+        }
+      }
+    }
+
+    stage('Container Build') {
+      steps {
+        withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
+          sh 'docker build --build-arg REACT_APP_OPENWEATHER_API_KEY=${REACT_APP_OPENWEATHER_API_KEY} -t ${IMAGE_NAME}:latest .'
+        }
+      }
+    }
+
+    stage('Container Scan') {
+      steps {
+        sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest'
+      }
+    }
+
+    stage('ECR Image Pushing') {
+      steps {
+        sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}'
+        sh 'docker tag ${IMAGE_NAME}:latest ${IMAGE_FULL}'
+        sh 'docker push ${IMAGE_FULL}'
+      }
+    }
+
+    stage('IaC Security Scan') {
+      steps {
+        sh 'checkov -d k8s'
+      }
+    }
+
+    stage('Update Deployment file') {
+      environment {
+        GIT_REPO_NAME = 'weather-app'
+        GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
+        GIT_USER_NAME = 'arumullayaswanth'
+        REPO_URL = '242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app'
+        YAML_FILE = 'deployment.yaml'
+      }
+      steps {
+        dir('k8s') {
+          withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
+            sh '''
+              git config user.email "${GIT_EMAIL}"
+              git config user.name "${GIT_USER_NAME}"
+
+              sed -i "s#image:.*#image: ${REPO_URL}:${BUILD_NUMBER}#g" ${YAML_FILE}
+              git add ${YAML_FILE}
+              git commit -m "[skip ci] Update ${IMAGE_NAME} image to version ${BUILD_NUMBER}" || true
+              git push https://${git_token}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:master
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        sh 'kubectl apply -f k8s/namespace.yaml'
+        sh 'kubectl apply -f k8s/deployment.yaml'
+        sh 'kubectl apply -f k8s/service.yaml'
+        sh 'kubectl -n weather-app rollout status deployment/weather-app'
+      }
+    }
+
+    stage('DAST') {
+      steps {
+        sh 'docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t ${APP_URL} -m 5 -r zap-report.html || true'
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+    }
+  }
+}
