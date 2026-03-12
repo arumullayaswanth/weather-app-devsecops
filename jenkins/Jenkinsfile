@@ -97,7 +97,7 @@ pipeline {
 
     stage('Update Deployment file') {
       environment {
-        GIT_REPO_NAME = 'weather-app'
+        GIT_REPO_NAME = 'weather-app-devsecops'
         GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
         GIT_USER_NAME = 'arumullayaswanth'
         REPO_URL = '242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app'

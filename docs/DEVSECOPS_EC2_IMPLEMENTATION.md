@@ -4,6 +4,10 @@
 
 This project is a weather website made using React.
 
+GitHub repository:
+
+`https://github.com/arumullayaswanth/weather-app-devsecops.git`
+
 It works like this:
 
 - user types a city name
@@ -356,7 +360,7 @@ Use this name:
 In Jenkins:
 
 - create Pipeline job
-- connect GitHub repo
+- connect GitHub repo `https://github.com/arumullayaswanth/weather-app-devsecops.git`
 - use script path `jenkins/Jenkinsfile`
 
 ### Add GitHub webhook
