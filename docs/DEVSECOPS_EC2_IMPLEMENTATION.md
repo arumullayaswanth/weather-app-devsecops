@@ -1,237 +1,548 @@
 
 
-## 9. Your EC2 plan
+# DevSecOps Weather App – Complete Guide
 
-You said you want one EC2 instance.
+## 1. Project Introduction
 
-That is okay for:
+This project is a **React Weather Application**.
 
-- demo project
-- learning
-- practice
+GitHub Repository:
 
-This EC2 instance will run:
+```
+https://github.com/arumullayaswanth/weather-app-devsecops.git
+```
 
-- Jenkins
-- SonarQube
-- Docker
-- k3s
-- scanners
+What the application does:
 
-### Good EC2 size
+1. User enters a city name
+2. Application calls the OpenWeather API
+3. API returns weather data
+4. Weather data is shown on the screen
 
-Use:
+Example:
 
-- `t3.large` minimum
-- `t3.xlarge` better
-- `30 GB` or more disk
+```
+User → React App → OpenWeather API → Weather Data → Browser
+```
 
-## 10. AWS security group ports
+But the main goal of this project is **DevSecOps automation**.
+
+Meaning:
+
+```
+Code → Security → Build → Deploy → Monitor
+```
+
+Everything is automated using **Jenkins**.
+
+---
+
+# 2. What is DevSecOps?
+
+DevSecOps means:
+
+| Word | Meaning      |
+| ---- | ------------ |
+| Dev  | Writing code |
+| Sec  | Security     |
+| Ops  | Deployment   |
+
+Instead of adding security at the end, we add security **at every step**.
+
+Example pipeline:
+
+```
+Developer
+   ↓
+GitHub
+   ↓
+Jenkins Pipeline
+   ↓
+Security Scans
+   ↓
+Build Docker Image
+   ↓
+Push Image to ECR
+   ↓
+Deploy to Kubernetes
+   ↓
+Security Testing
+```
+
+---
+
+# 3. Architecture of the Project
+
+This project uses **only ONE EC2 instance**.
+
+Architecture:
+
+```
+Developer
+   │
+   ▼
+GitHub Repository
+   │
+   ▼
+Jenkins CI/CD
+   │
+   ├ Secrets Scan (Gitleaks)
+   ├ Code Scan (SonarQube)
+   ├ Dependency Scan (Snyk)
+   ├ Container Scan (Trivy)
+   ├ Kubernetes Scan (Checkov)
+   │
+   ▼
+Docker Build
+   │
+   ▼
+Amazon ECR
+   │
+   ▼
+Kubernetes (k3s)
+   │
+   ▼
+Weather App Running
+   │
+   ▼
+OWASP ZAP Security Test
+   │
+   ▼
+Falco Runtime Monitoring
+```
+
+Everything runs on **one server**.
+
+---
+
+# 4. Tools Used
+
+| Tool                              | Purpose                           |
+| --------------------------------- | --------------------------------- |
+| GitHub                            | Stores project code               |
+| Jenkins                           | CI/CD pipeline automation         |
+| SonarQube                         | Static code security scanning     |
+| Snyk                              | Dependency vulnerability scanning |
+| Gitleaks                          | Secret detection                  |
+| Docker                            | Containerization                  |
+| Trivy                             | Container vulnerability scan      |
+| Amazon Elastic Container Registry | Docker image registry             |
+| Kubernetes (k3s)                  | Container orchestration           |
+| Checkov                           | Kubernetes security scan          |
+| OWASP ZAP                         | Dynamic web security testing      |
+| Falco                             | Runtime security monitoring       |
+
+---
+
+# 5. AWS Setup
+
+Create **one EC2 instance**.
+
+Recommended configuration:
+
+```
+Instance type: t3.large
+Operating System: Ubuntu 22.04
+Storage: 30 GB
+```
+
+---
+
+# 6. Security Group Ports
 
 Open these ports:
 
-- `22` for SSH
-- `8080` for Jenkins
-- `9000` for SonarQube
-- `30080` for your weather app
+| Port  | Purpose     |
+| ----- | ----------- |
+| 22    | SSH         |
+| 8080  | Jenkins     |
+| 9000  | SonarQube   |
+| 30080 | Weather App |
 
-If you later use Ingress:
+---
 
-- `80`
-- `443`
+# 7. Connect to EC2
 
-## 11. Install software on EC2
+SSH into the server.
 
-Use Ubuntu 22.04.
+```
+ssh -i key.pem ubuntu@EC2_PUBLIC_IP
+```
 
-### Install Docker
+---
 
-```bash
+# 8. Update System
+
+```
 sudo apt update
-sudo apt install -y docker.io
-sudo systemctl enable --now docker
+sudo apt upgrade -y
+```
+
+---
+
+# 9. Install Docker
+
+```
+sudo apt install docker.io -y
+```
+
+Start Docker:
+
+```
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+Add user to Docker group:
+
+```
 sudo usermod -aG docker ubuntu
 ```
 
-Logout and login again after this.
+Logout and login again.
 
-### Install Java and Jenkins
+---
 
-```bash
-sudo apt install -y fontconfig openjdk-17-jre
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt update
-sudo apt install -y jenkins
-sudo systemctl enable --now jenkins
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
+# 10. Install Java
+
+```
+sudo apt install openjdk-17-jdk -y
 ```
 
-### Install kubectl and k3s
+Check:
 
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
+```
+java -version
+```
+
+---
+
+# 11. Install Jenkins
+
+Add Jenkins repo:
+
+```
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
+/usr/share/keyrings/jenkins-keyring.asc > /dev/null
+```
+
+```
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+/etc/apt/sources.list.d/jenkins.list > /dev/null
+```
+
+Install Jenkins:
+
+```
+sudo apt update
+sudo apt install jenkins -y
+```
+
+Start Jenkins:
+
+```
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+```
+
+Open:
+
+```
+http://EC2_IP:8080
+```
+
+---
+
+# 12. Unlock Jenkins
+
+Run:
+
+```
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+
+Paste password in Jenkins.
+
+Install **suggested plugins**.
+
+---
+
+# 13. Install Kubernetes (k3s)
+
+```
 curl -sfL https://get.k3s.io | sh -
+```
+
+Check cluster:
+
+```
 sudo kubectl get nodes
+```
+
+---
+
+# 14. Give Jenkins Kubernetes Access
+
+```
 sudo mkdir -p /var/lib/jenkins/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml /var/lib/jenkins/.kube/config
+```
+
+```
+sudo cp /etc/rancher/k3s/k3s.yaml \
+/var/lib/jenkins/.kube/config
+```
+
+```
 sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
 ```
 
-### Install these tools too
+---
 
-Install:
+# 15. Install Security Tools
 
-- `gitleaks`
-- `trivy`
-- `snyk`
-- `checkov`
-- `sonar-scanner`
-- `aws cli`
+Install Gitleaks:
 
-## 12. Start SonarQube
-
-Easy command:
-
-```bash
-docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
+```
+wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
+chmod +x gitleaks-linux-amd64
+sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
 ```
 
-Then open:
+---
 
-`http://EC2_PUBLIC_IP:9000`
+Install Trivy:
 
-## 13. Start Falco
+```
+sudo apt install trivy -y
+```
 
-Falco watches runtime activity.
+---
 
-Install with Helm:
+Install Checkov:
 
-```bash
+```
+pip install checkov
+```
+
+---
+
+Install Snyk:
+
+```
+npm install -g snyk
+```
+
+---
+
+Install AWS CLI:
+
+```
+sudo apt install awscli -y
+```
+
+---
+
+# 16. Start SonarQube
+
+Run:
+
+```
+docker run -d \
+--name sonarqube \
+-p 9000:9000 \
+sonarqube:lts-community
+```
+
+Open:
+
+```
+http://EC2_IP:9000
+```
+
+Default login:
+
+```
+admin
+admin
+```
+
+Generate **Sonar token** and store it in Jenkins.
+
+---
+
+# 17. Create Amazon ECR Repository
+
+Open AWS console.
+
+Create repository:
+
+```
+weather-app
+```
+
+Example:
+
+```
+242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app
+```
+
+---
+
+# 18. Jenkins Credentials
+
+Add credentials:
+
+| ID                  | Purpose             |
+| ------------------- | ------------------- |
+| openweather-api-key | OpenWeather API key |
+| snyk-token          | Snyk API token      |
+| my-git-pattoken     | GitHub token        |
+| sonar-token         | SonarQube token     |
+
+---
+
+# 19. Jenkins Pipeline Job
+
+Create job:
+
+```
+New Item → Pipeline
+```
+
+Name:
+
+```
+weather-app-pipeline
+```
+
+Choose:
+
+```
+Pipeline script from SCM
+```
+
+Repository:
+
+```
+https://github.com/arumullayaswanth/weather-app-devsecops.git
+```
+
+Script path:
+
+```
+jenkins/Jenkinsfile
+```
+
+---
+
+# 20. Pipeline Execution
+
+When Jenkins runs, it performs:
+
+```
+1 Checkout Code
+2 Secrets Scan (Gitleaks)
+3 Install Dependencies
+4 Run Tests
+5 Build React App
+6 SAST Scan (SonarQube)
+7 Dependency Scan (Snyk)
+8 Build Docker Image
+9 Container Scan (Trivy)
+10 Push Image to Amazon ECR
+11 Kubernetes YAML Scan (Checkov)
+12 Update Deployment YAML
+13 Deploy to Kubernetes
+14 Run OWASP ZAP Scan
+```
+
+---
+
+# 21. Deploy Application
+
+Run once:
+
+```
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+Check pods:
+
+```
+kubectl get pods -n weather-app
+```
+
+---
+
+# 22. Access the Application
+
+Open browser:
+
+```
+http://EC2_PUBLIC_IP:30080
+```
+
+Weather app will appear.
+
+---
+
+# 23. OWASP ZAP Security Scan
+
+Pipeline automatically runs **OWASP ZAP**.
+
+It checks for:
+
+* XSS
+* insecure headers
+* vulnerabilities
+
+Report stored in Jenkins.
+
+---
+
+# 24. Runtime Security
+
+Install **Falco**:
+
+```
 helm repo add falcosecurity https://falcosecurity.github.io/charts
 helm repo update
 helm install falco falcosecurity/falco -n falco --create-namespace
 ```
 
-## 14. Jenkins setup
+Falco monitors suspicious activity.
 
-### Install Jenkins plugins
+---
 
-Install:
+# 25. Final Pipeline
 
-- Pipeline
-- Git
-- Credentials Binding
-- Docker Pipeline
-- SonarQube Scanner
+Final DevSecOps workflow:
 
-### Add Jenkins credentials
-
-Create these:
-
-- `openweather-api-key`
-- `snyk-token`
-- `my-git-pattoken`
-
-For Amazon ECR:
-
-- best way is attach IAM role to EC2
-- or configure AWS credentials in Jenkins
-
-### Add SonarQube server in Jenkins
-
-Go to:
-
-`Manage Jenkins -> System -> SonarQube servers`
-
-Use this name:
-
-`sonarqube`
-
-### Create pipeline job
-
-In Jenkins:
-
-- create Pipeline job
-- connect GitHub repo `https://github.com/arumullayaswanth/weather-app-devsecops.git`
-- use script path `jenkins/Jenkinsfile`
-
-### Add GitHub webhook
-
-Use:
-
-`http://EC2_PUBLIC_IP:8080/github-webhook/`
-
-## 15. How deployment works
-
-The app is deployed using:
-
-- namespace YAML
-- deployment YAML
-- service YAML
-
-Jenkins updates the image version in:
-
-- [k8s/deployment.yaml](c:/Users/Yaswanth%20Reddy/OneDrive%20-%20vitap.ac.in/Desktop/weather-app/k8s/deployment.yaml#L1)
-
-Then Kubernetes runs the latest image.
-
-Your app will open at:
-
-`http://EC2_PUBLIC_IP:30080`
-
-## 16. First deployment commands
-
-Run:
-
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl -n weather-app get all
+```
+GitHub
+   ↓
+Jenkins
+   ↓
+Security Scans
+   ↓
+Docker Build
+   ↓
+Push to Amazon ECR
+   ↓
+Deploy to Kubernetes
+   ↓
+OWASP ZAP Scan
+   ↓
+Falco Monitoring
 ```
 
-## 17. Things you must change
+Application URL:
 
-Before real use, change:
-
-- `EC2_PUBLIC_IP` in `jenkins/Jenkinsfile`
-- ECR values if account, region, or repo name changes
-- GitHub repo name if your repo name is different
-
-Also run:
-
-```bash
-npm install
+```
+http://EC2_PUBLIC_IP:30080
 ```
 
-Then commit the new `package-lock.json`.
-
-Later you can use `npm ci` in Jenkins.
-
-## 18. One warning
-
-Jenkins updates the deployment file and pushes it back to GitHub.
-
-This can trigger the pipeline again.
-
-That can create a loop.
-
-To reduce this:
-
-- commit message uses `[skip ci]`
-- or keep Kubernetes YAML in another repo
-- or add Jenkins filters
-
-Best real-world method:
-
-Keep app code and deployment manifests in different repos.
-
-## 19. Easy explanation for your project
-
-You can explain your project like this:
-
-"I built a React weather app. When I push code to GitHub, Jenkins starts automatically. Jenkins checks secrets, code quality, dependencies, Docker image security, and Kubernetes file security. Then Jenkins builds the Docker image, pushes it to Amazon ECR, updates the Kubernetes deployment file, deploys the app to k3s on EC2, runs OWASP ZAP on the live app, and uses Falco for runtime monitoring."
+---
