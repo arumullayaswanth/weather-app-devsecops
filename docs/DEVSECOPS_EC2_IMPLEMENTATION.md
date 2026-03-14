@@ -370,9 +370,11 @@ sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
 ### Install Gitleaks
 
 ```bash
-wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
-chmod +x gitleaks-linux-amd64
-sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
+VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')
+wget https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz
+tar -xzf gitleaks_${VERSION}_linux_x64.tar.gz
+sudo mv gitleaks /usr/local/bin/
+gitleaks version
 ```
 
 ---
