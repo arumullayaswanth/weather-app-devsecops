@@ -13,12 +13,22 @@ spec:
       labels:
         app: weather-app
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: weather-app
           image: 242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           resources:
             requests:
               cpu: "100m"
