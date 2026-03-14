@@ -270,6 +270,15 @@ Start Jenkins:
 ```bash
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
+sudo usermod -aG docker jenkins
+sudo systemctl restart docker
+sudo systemctl restart jenkins
+
+```
+Then verify with:
+```bash
+sudo su - jenkins -s /bin/bash
+docker version
 ```
 
 Check Jenkins status:
