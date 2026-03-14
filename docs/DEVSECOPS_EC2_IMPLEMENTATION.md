@@ -380,25 +380,56 @@ gitleaks version
 ---
 
 ### Install Trivy
-
+- Add Trivy Repository
 ```bash
-sudo dnf install -y trivy
+sudo tee /etc/yum.repos.d/trivy.repo <<EOF
+[trivy]
+name=Trivy repository
+baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/\$basearch/
+enabled=1
+gpgcheck=0
+EOF
+```
+- Install Trivy
+```bash
+sudo dnf install trivy -y
+```
+- Verify Installation
+```bash
+trivy --version
 ```
 
 ---
 
 ### Install Checkov
 
-Install pip first:
-
 ```bash
-sudo dnf install python3-pip -y
-```
+#!/bin/bash
 
-Install Checkov:
+echo "Updating system..."
+sudo dnf update -y
 
-```bash
-pip3 install checkov
+echo "Installing Python pip and virtualenv..."
+sudo dnf install python3-pip python3-virtualenv -y
+
+echo "Creating Checkov virtual environment..."
+python3 -m venv ~/checkov-env
+
+echo "Activating virtual environment..."
+source ~/checkov-env/bin/activate
+
+echo "Installing Checkov..."
+pip install --upgrade pip
+pip install checkov
+
+echo "Creating global command for Checkov..."
+sudo ln -sf ~/checkov-env/bin/checkov /usr/local/bin/checkov
+
+echo "Verifying Checkov installation..."
+checkov --version
+
+echo "Checkov installation completed!"
+echo "You can now run: checkov -d ."
 ```
 
 ---
@@ -416,13 +447,32 @@ Install Snyk:
 ```bash
 npm install -g snyk
 ```
+```bash
+snyk --version
+```
 
 ---
 
 ### Install AWS CLI
 
 ```bash
-sudo dnf install awscli -y
+# Download AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# Install unzip if not installed
+sudo dnf install unzip -y
+
+# Extract the package
+unzip awscliv2.zip
+
+# Install AWS CLI
+sudo ./aws/install
+
+# Create command link
+sudo ln -sf /usr/local/bin/aws /usr/bin/aws
+
+# Verify installation
+aws --version
 ```
 
 ---
