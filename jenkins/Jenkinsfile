@@ -152,7 +152,7 @@ pipeline {
 
             git add $YAML_FILE
             git commit -m "[skip ci] Update image to version $BUILD_NUMBER" || true
-            git push https://$git_token@github.com/$GIT_USER_NAME/$GIT_REPO_NAME HEAD:master
+            git push https://$GIT_USER_NAME:$git_token@github.com/$GIT_USER_NAME/$GIT_REPO_NAME HEAD:master
             '''
           }
         }
