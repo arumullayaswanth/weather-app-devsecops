@@ -179,92 +179,159 @@ sudo apt upgrade -y
 ```
 
 ---
+Here is your **updated and corrected documentation** based on what actually worked on **Ubuntu 24.04 / EC2** (since the Jenkins repo method caused the GPG key error). I kept your structure but fixed the Jenkins installation method.
+
+---
 
 # 9. Install Docker
 
-```
+Install Docker:
+
+```bash
+sudo apt update
 sudo apt install docker.io -y
 ```
 
 Start Docker:
 
-```
+```bash
 sudo systemctl enable docker
 sudo systemctl start docker
 ```
 
 Add user to Docker group:
 
-```
+```bash
 sudo usermod -aG docker ubuntu
 ```
 
-Logout and login again.
+Apply group changes:
+
+```bash
+newgrp docker
+```
+
+Verify Docker:
+
+```bash
+docker --version
+```
 
 ---
 
 # 10. Install Java
 
-```
+Jenkins requires **Java 17**.
+
+Install Java:
+
+```bash
 sudo apt install openjdk-17-jdk -y
 ```
 
-Check:
+Check Java version:
 
-```
+```bash
 java -version
 ```
+
+Expected output should show **OpenJDK 17**.
 
 ---
 
 # 11. Install Jenkins
 
-Add Jenkins repo:
+Due to repository key issues on **Ubuntu 24.04**, install Jenkins using the official `.deb` package.
 
-```
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee \
-/usr/share/keyrings/jenkins-keyring.asc > /dev/null
-```
+Download Jenkins package:
 
-```
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-/etc/apt/sources.list.d/jenkins.list > /dev/null
+```bash
+wget https://pkg.jenkins.io/debian-stable/binary/jenkins_2.452.3_all.deb
 ```
 
 Install Jenkins:
 
+```bash
+sudo dpkg -i jenkins_2.452.3_all.deb
 ```
-sudo apt update
-sudo apt install jenkins -y
+
+If dependency errors appear, fix them:
+
+```bash
+sudo apt -f install -y
 ```
 
 Start Jenkins:
 
-```
+```bash
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
 ```
 
-Open:
+Check Jenkins status:
 
-```
-http://EC2_IP:8080
+```bash
+sudo systemctl status jenkins
 ```
 
 ---
 
-# 12. Unlock Jenkins
+Your section is already good 👍 — I’ll just **clean it up slightly and format it better for documentation/README style** so it looks more professional.
 
-Run:
+---
+
+# 12. Access and Unlock Jenkins
+
+## Access Jenkins
+
+Open Jenkins in your browser:
 
 ```
+http://EC2_PUBLIC_IP:8080
+```
+
+Make sure your **EC2 Security Group allows port 8080**.
+
+Example inbound rule:
+
+| Type       | Protocol | Port | Source    |
+| ---------- | -------- | ---- | --------- |
+| Custom TCP | TCP      | 8080 | 0.0.0.0/0 |
+
+---
+
+## Unlock Jenkins
+
+Retrieve the Jenkins initial admin password:
+
+```bash
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 
-Paste password in Jenkins.
+Copy the password and paste it into the **Unlock Jenkins** page in the browser.
 
-Install **suggested plugins**.
+---
+
+## Install Plugins
+
+On the **Customize Jenkins** page, choose:
+
+```
+Install suggested plugins
+```
+
+Jenkins will automatically install the commonly used plugins required for most CI/CD pipelines.
+
+
+## Create Admin User
+
+After the plugins are installed, create your administrator account:
+
+* **Username**
+* **Password**
+* **Email address**
+
+Click **Save and Continue**.
 
 ---
 
