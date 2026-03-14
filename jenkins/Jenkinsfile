@@ -2,12 +2,17 @@ pipeline {
   agent any
 
   environment {
+    // Change this to your AWS region.
     AWS_REGION = 'us-east-1'
+    // Change this to your ECR registry.
     ECR_REGISTRY = '713939171080.dkr.ecr.us-east-1.amazonaws.com'
+    // Change this to your ECR repository name.
     ECR_REPOSITORY = 'weather-app'
+    // Change this if your image name is different.
     IMAGE_NAME = 'weather-app'
     IMAGE_TAG = "${env.BUILD_NUMBER}"
     IMAGE_FULL = "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
+    // Change this to your deployed application URL.
     APP_URL = 'http://54.224.36.164:30080'
     CI = 'true'
   }
@@ -45,6 +50,7 @@ pipeline {
 
     stage('Build Frontend') {
       steps {
+        // Change this credential ID if your OpenWeather key uses a different Jenkins credential name.
         withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
           sh 'npm run build'
         }
@@ -54,7 +60,9 @@ pipeline {
     stage('SAST') {
       steps {
         script {
+          // Change this tool name if your SonarScanner tool name is different in Jenkins.
           def scannerHome = tool(name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation')
+          // Change this SonarQube server name if your Jenkins SonarQube config uses a different name.
           withSonarQubeEnv('sonarqube') {
             sh "${scannerHome}/bin/sonar-scanner"
           }
@@ -64,6 +72,7 @@ pipeline {
 
     stage('Dependency Scan') {
       steps {
+        // Change this credential ID if your Snyk token uses a different Jenkins credential name.
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
           sh 'snyk auth $SNYK_TOKEN'
           sh 'snyk test --all-projects --severity-threshold=high'
@@ -73,6 +82,7 @@ pipeline {
     }
     stage('Container Build') {
       steps {
+        // Change this credential ID if your OpenWeather key uses a different Jenkins credential name.
         withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
           sh '''
           docker build \
@@ -85,6 +95,7 @@ pipeline {
 
     stage('Container Scan') {
       steps {
+        // Change this credential ID if your Snyk token uses a different Jenkins credential name.
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
           sh 'snyk auth $SNYK_TOKEN'
           sh 'snyk test --docker $IMAGE_FULL --file=Dockerfile --severity-threshold=high'
@@ -126,8 +137,11 @@ pipeline {
     stage('Update Deployment file') {
 
       environment {
+        // Change this to your GitHub repository name that stores Kubernetes manifests.
         GIT_REPO_NAME = 'weather-app-devsecops'
+        // Change this to your Git email.
         GIT_EMAIL = 'yaswanth.arumulla@gmail.com'
+        // Change this to your GitHub username.
         GIT_USER_NAME = 'arumullayaswanth'
         YAML_FILE = 'deployment.yaml'
       }
@@ -135,6 +149,7 @@ pipeline {
       steps {
         dir('k8s') {
 
+          // Change this credential ID if your GitHub PAT uses a different Jenkins credential name.
           withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
 
             sh '''
@@ -162,6 +177,7 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         sh '''
+        # This stage assumes Jenkins can access your Kubernetes cluster from this machine.
         mkdir -p "$HOME/.kube"
 
         if [ ! -f "$HOME/.kube/config" ]; then
@@ -202,6 +218,7 @@ pipeline {
     stage('OWASP ZAP-DAST Scan') {
       steps {
         sh '''
+        # This stage scans the deployed application URL from APP_URL above.
         docker run --rm --network host \
         -v "$PWD:/zap/wrk:rw" \
         -w /zap/wrk \
@@ -210,11 +227,20 @@ pipeline {
         '''
       }
     }
+
+    stage('Deployment Link') {
+      steps {
+        sh '''
+        echo "Deployment Link: $APP_URL"
+        printf "Deployment Link: %s\n" "$APP_URL" > deployment-link.txt
+        '''
+      }
+    }
   }
 
   post {
     always {
-      archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'zap-report.html, deployment-link.txt', allowEmptyArchive: true
       sh 'docker image prune -f'
     }
   }
