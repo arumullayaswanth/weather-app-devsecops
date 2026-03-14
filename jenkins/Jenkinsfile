@@ -18,6 +18,7 @@ pipeline {
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -32,7 +33,7 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        sh 'npm install'
+        sh 'npm ci'
       }
     }
 
@@ -61,7 +62,7 @@ pipeline {
     stage('Dependency Scan') {
       steps {
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
-          sh 'snyk auth ${SNYK_TOKEN}'
+          sh 'snyk auth $SNYK_TOKEN'
           sh 'snyk test --severity-threshold=high'
         }
       }
@@ -70,22 +71,29 @@ pipeline {
     stage('Container Build') {
       steps {
         withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
-          sh 'docker build --build-arg REACT_APP_OPENWEATHER_API_KEY=${REACT_APP_OPENWEATHER_API_KEY} -t ${IMAGE_NAME}:latest .'
+          sh '''
+          docker build \
+          --build-arg REACT_APP_OPENWEATHER_API_KEY=$REACT_APP_OPENWEATHER_API_KEY \
+          -t $IMAGE_FULL .
+          '''
         }
       }
     }
 
     stage('Container Scan') {
       steps {
-        sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest'
+        sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL $IMAGE_FULL'
       }
     }
 
-    stage('ECR Image Pushing') {
+    stage('Push Image to ECR') {
       steps {
-        sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}'
-        sh 'docker tag ${IMAGE_NAME}:latest ${IMAGE_FULL}'
-        sh 'docker push ${IMAGE_FULL}'
+        sh '''
+        aws ecr get-login-password --region $AWS_REGION | \
+        docker login --username AWS --password-stdin $ECR_REGISTRY
+
+        docker push $IMAGE_FULL
+        '''
       }
     }
 
@@ -96,6 +104,7 @@ pipeline {
     }
 
     stage('Update Deployment file') {
+
       environment {
         GIT_REPO_NAME = 'weather-app-devsecops'
         GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
@@ -103,17 +112,21 @@ pipeline {
         REPO_URL = '242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app'
         YAML_FILE = 'deployment.yaml'
       }
+
       steps {
         dir('k8s') {
-          withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
-            sh '''
-              git config user.email "${GIT_EMAIL}"
-              git config user.name "${GIT_USER_NAME}"
 
-              sed -i "s#image:.*#image: ${REPO_URL}:${BUILD_NUMBER}#g" ${YAML_FILE}
-              git add ${YAML_FILE}
-              git commit -m "[skip ci] Update ${IMAGE_NAME} image to version ${BUILD_NUMBER}" || true
-              git push https://${git_token}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:master
+          withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
+
+            sh '''
+            git config user.email "$GIT_EMAIL"
+            git config user.name "$GIT_USER_NAME"
+
+            sed -i "s#image:.*#image: $REPO_URL:$BUILD_NUMBER#g" $YAML_FILE
+
+            git add $YAML_FILE
+            git commit -m "[skip ci] Update image to version $BUILD_NUMBER" || true
+            git push https://$git_token@github.com/$GIT_USER_NAME/$GIT_REPO_NAME HEAD:master
             '''
           }
         }
@@ -122,16 +135,23 @@ pipeline {
 
     stage('Deploy to Kubernetes') {
       steps {
-        sh 'kubectl apply -f k8s/namespace.yaml'
-        sh 'kubectl apply -f k8s/deployment.yaml'
-        sh 'kubectl apply -f k8s/service.yaml'
-        sh 'kubectl -n weather-app rollout status deployment/weather-app'
+        sh '''
+        kubectl apply -f k8s/namespace.yaml
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+
+        kubectl -n weather-app rollout status deployment/weather-app
+        '''
       }
     }
 
-    stage('DAST') {
+    stage('DAST Scan') {
       steps {
-        sh 'docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t ${APP_URL} -m 5 -r zap-report.html || true'
+        sh '''
+        docker run --rm --network host \
+        ghcr.io/zaproxy/zaproxy:stable \
+        zap-baseline.py -t $APP_URL -m 5 -r zap-report.html || true
+        '''
       }
     }
   }
@@ -139,6 +159,7 @@ pipeline {
   post {
     always {
       archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+      sh 'docker image prune -f'
     }
   }
 }
