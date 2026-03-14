@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: weather-app
-          image: 713939171080.dkr.ecr.us-east-1.amazonaws.com/weather-app:21@sha256:0921e86e25af387050e45f01ff48af2fde8b983a7044d3c7e25dbd2d8492c737
+          image: 713939171080.dkr.ecr.us-east-1.amazonaws.com/weather-app:22@sha256:8cd551a2b7933d8e4fd2efd37d46e12adee2f5a33223e701833f67fc72cabd7e
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
