@@ -127,7 +127,7 @@ pipeline {
 
       environment {
         GIT_REPO_NAME = 'weather-app-devsecops'
-        GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
+        GIT_EMAIL = 'yaswanth.arumulla@gmail.com'
         GIT_USER_NAME = 'arumullayaswanth'
         YAML_FILE = 'deployment.yaml'
       }
@@ -162,6 +162,23 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         sh '''
+        mkdir -p "$HOME/.kube"
+
+        if [ ! -f "$HOME/.kube/config" ]; then
+          if sudo -n test -r /etc/rancher/k3s/k3s.yaml 2>/dev/null; then
+            sudo cp /etc/rancher/k3s/k3s.yaml "$HOME/.kube/config"
+            sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
+          elif [ -r /etc/rancher/k3s/k3s.yaml ]; then
+            cp /etc/rancher/k3s/k3s.yaml "$HOME/.kube/config"
+          else
+            echo "k3s kubeconfig is not readable for Jenkins and passwordless sudo is unavailable"
+            exit 1
+          fi
+
+          chmod 600 "$HOME/.kube/config"
+        fi
+
+        export KUBECONFIG="$HOME/.kube/config"
         kubectl apply -f k8s/namespace.yaml
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/networkpolicy.yaml
