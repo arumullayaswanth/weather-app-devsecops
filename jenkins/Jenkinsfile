@@ -129,7 +129,6 @@ pipeline {
         GIT_REPO_NAME = 'weather-app-devsecops'
         GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
         GIT_USER_NAME = 'arumullayaswanth'
-        REPO_URL = '713939171080.dkr.ecr.us-east-1.amazonaws.com/weather-app'
         YAML_FILE = 'deployment.yaml'
       }
 
@@ -142,7 +141,14 @@ pipeline {
             git config user.email "$GIT_EMAIL"
             git config user.name "$GIT_USER_NAME"
 
-            sed -i "s#image:.*#image: $REPO_URL:$BUILD_NUMBER#g" $YAML_FILE
+            IMAGE_DIGEST=$(aws ecr describe-images \
+              --repository-name "$ECR_REPOSITORY" \
+              --region "$AWS_REGION" \
+              --image-ids imageTag="$BUILD_NUMBER" \
+              --query 'imageDetails[0].imageDigest' \
+              --output text)
+
+            sed -i "s#image:.*#image: $ECR_REGISTRY/$ECR_REPOSITORY:$BUILD_NUMBER@$IMAGE_DIGEST#g" $YAML_FILE
 
             git add $YAML_FILE
             git commit -m "[skip ci] Update image to version $BUILD_NUMBER" || true

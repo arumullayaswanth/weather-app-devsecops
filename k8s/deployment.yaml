@@ -19,7 +19,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: weather-app
-          image: 242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app:latest
+          image: 713939171080.dkr.ecr.us-east-1.amazonaws.com/weather-app:1@sha256:1111111111111111111111111111111111111111111111111111111111111111
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -29,6 +29,8 @@ spec:
               drop:
                 - ALL
             runAsNonRoot: true
+            runAsUser: 10001
+            readOnlyRootFilesystem: true
           resources:
             requests:
               cpu: "100m"
@@ -48,3 +50,9 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
