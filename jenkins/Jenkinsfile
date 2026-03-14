@@ -184,7 +184,12 @@ pipeline {
         kubectl apply -f k8s/networkpolicy.yaml
         kubectl apply -f k8s/service.yaml
 
-        kubectl -n weather-app rollout status deployment/weather-app
+        if ! kubectl -n weather-app rollout status deployment/weather-app; then
+          kubectl -n weather-app get pods -o wide || true
+          kubectl -n weather-app describe deployment weather-app || true
+          kubectl -n weather-app describe pods || true
+          exit 1
+        fi
         '''
       }
     }

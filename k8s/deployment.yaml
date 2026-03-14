@@ -5,6 +5,9 @@ metadata:
   namespace: weather-app
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app: weather-app
@@ -13,6 +16,7 @@ spec:
       labels:
         app: weather-app
     spec:
+      terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 10001
