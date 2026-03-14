@@ -133,24 +133,28 @@ Everything runs on **one server**.
 | Falco                             | Runtime security monitoring       |
 
 ---
-
-# 5. AWS Setup
-
-Create **one EC2 instance**.
-
-Recommended configuration:
-
-```
-Instance type: t3.large
-Operating System: Ubuntu 22.04
-Storage: 30 GB
-```
+Below is the **Amazon Linux 2023 version of your setup**.
+Amazon Linux uses **`dnf` instead of `apt`**, and the **default user is `ec2-user`** (not `ubuntu`).
 
 ---
 
-# 6. Security Group Ports
+# 5️⃣ AWS Setup
 
-Open these ports:
+Create **EC2 Instance**
+
+Recommended:
+
+| Setting       | Value                 |
+| ------------- | --------------------- |
+| Instance Type | t3.large              |
+| OS            | **Amazon Linux 2023** |
+| Storage       | 30 GB                 |
+
+---
+
+# 6️⃣ Security Group Ports
+
+Open these ports in **Inbound Rules**:
 
 | Port  | Purpose     |
 | ----- | ----------- |
@@ -161,31 +165,28 @@ Open these ports:
 
 ---
 
-# 7. Connect to EC2
+# 7️⃣ Connect to EC2
 
-SSH into the server.
-
-```
-ssh -i key.pem ubuntu@EC2_PUBLIC_IP
+```bash
+ssh -i key.pem ec2-user@EC2_PUBLIC_IP
 ```
 
 ---
 
-# 8. Update System
+# 8️⃣ Update System
 
+```bash
+sudo dnf update -y
 ```
-sudo apt update
-sudo apt upgrade -y
-```
+
 ---
 
-# 9. Install Docker
+# 9️⃣ Install Docker
 
 Install Docker:
 
 ```bash
-sudo apt update
-sudo apt install docker.io -y
+sudo dnf install docker -y
 ```
 
 Start Docker:
@@ -198,7 +199,7 @@ sudo systemctl start docker
 Add user to Docker group:
 
 ```bash
-sudo usermod -aG docker ubuntu
+sudo usermod -aG docker ec2-user
 ```
 
 Apply group changes:
@@ -215,46 +216,49 @@ docker --version
 
 ---
 
-# 10. Install Java
+# 🔟 Install Java (Required for Jenkins)
 
-Jenkins requires **Java 17**.
+Amazon Linux provides **Amazon Corretto**.
 
-Install Java:
+Install Java 17:
 
 ```bash
-sudo apt install openjdk-17-jdk -y
+sudo dnf install java-17-amazon-corretto -y
 ```
 
-Check Java version:
+Check version:
 
 ```bash
 java -version
 ```
 
-Expected output should show **OpenJDK 17**.
+Expected output:
+
+```
+openjdk version "17.x.x"
+```
 
 ---
 
-# 11. Install Jenkins
+# 11️⃣ Install Jenkins
 
-Due to repository key issues on **Ubuntu 24.04**, install Jenkins using the official `.deb` package.
-
-Download Jenkins package:
+Add Jenkins repository:
 
 ```bash
-wget https://pkg.jenkins.io/debian-stable/binary/jenkins_2.452.3_all.deb
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+https://pkg.jenkins.io/redhat-stable/jenkins.repo
+```
+
+Import Jenkins key:
+
+```bash
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
 ```
 
 Install Jenkins:
 
 ```bash
-sudo dpkg -i jenkins_2.452.3_all.deb
-```
-
-If dependency errors appear, fix them:
-
-```bash
-sudo apt -f install -y
+sudo dnf install jenkins -y
 ```
 
 Start Jenkins:
@@ -272,96 +276,100 @@ sudo systemctl status jenkins
 
 ---
 
-# 12. Access and Unlock Jenkins
-## Access Jenkins
+# 12️⃣ Access Jenkins
 
-Open Jenkins in your browser:
+Open browser:
 
 ```
 http://EC2_PUBLIC_IP:8080
 ```
 
-Make sure your **EC2 Security Group allows port 8080**.
+Example:
 
-Example inbound rule:
-
-| Type       | Protocol | Port | Source    |
-| ---------- | -------- | ---- | --------- |
-| Custom TCP | TCP      | 8080 | 0.0.0.0/0 |
+```
+http://54.xx.xx.xx:8080
+```
 
 ---
 
-## Unlock Jenkins
+# Unlock Jenkins
 
-Retrieve the Jenkins initial admin password:
+Get initial password:
 
 ```bash
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 
-Copy the password and paste it into the **Unlock Jenkins** page in the browser.
+Paste into **Unlock Jenkins page**.
 
 ---
 
-## Install Plugins
+# Install Plugins
 
-On the **Customize Jenkins** page, choose:
+Choose:
 
 ```
-Install suggested plugins
+Install Suggested Plugins
 ```
 
-Jenkins will automatically install the commonly used plugins required for most CI/CD pipelines.
+---
 
+# Create Admin User
 
-## Create Admin User
+Provide:
 
-After the plugins are installed, create your administrator account:
-
-* **Username**
-* **Password**
-* **Email address**
+* Username
+* Password
+* Email
 
 Click **Save and Continue**.
 
 ---
 
-# 13. Install Kubernetes (k3s)
+# 13️⃣ Install Kubernetes (k3s)
 
-```
+Install k3s:
+
+```bash
 curl -sfL https://get.k3s.io | sh -
 ```
 
 Check cluster:
 
-```
+```bash
 sudo kubectl get nodes
+```
+
+Expected:
+
+```
+Ready
 ```
 
 ---
 
-# 14. Give Jenkins Kubernetes Access
+# 14️⃣ Give Jenkins Kubernetes Access
 
-```
+```bash
 sudo mkdir -p /var/lib/jenkins/.kube
 ```
 
-```
+```bash
 sudo cp /etc/rancher/k3s/k3s.yaml \
 /var/lib/jenkins/.kube/config
 ```
 
-```
+```bash
 sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube
 ```
 
 ---
 
-# 15. Install Security Tools
+# 15️⃣ Install Security Tools
 
-Install Gitleaks:
+### Install Gitleaks
 
-```
+```bash
 wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
 chmod +x gitleaks-linux-amd64
 sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
@@ -369,53 +377,71 @@ sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
 
 ---
 
-Install Trivy:
+### Install Trivy
 
-```
-sudo apt install trivy -y
+```bash
+sudo dnf install -y trivy
 ```
 
 ---
+
+### Install Checkov
+
+Install pip first:
+
+```bash
+sudo dnf install python3-pip -y
+```
 
 Install Checkov:
 
-```
-pip install checkov
+```bash
+pip3 install checkov
 ```
 
 ---
 
+### Install Snyk
+
+Install NodeJS:
+
+```bash
+sudo dnf install nodejs -y
+```
+
 Install Snyk:
 
-```
+```bash
 npm install -g snyk
 ```
 
 ---
 
-Install AWS CLI:
+### Install AWS CLI
 
-```
-sudo apt install awscli -y
+```bash
+sudo dnf install awscli -y
 ```
 
 ---
 
-# 16. Start SonarQube
+# 16️⃣ Start SonarQube
 
-Run:
+Run container:
 
-```
+```bash
 docker run -d \
 --name sonarqube \
 -p 9000:9000 \
 sonarqube:lts-community
 ```
 
-Open:
+---
+
+# Open SonarQube
 
 ```
-http://EC2_IP:9000
+http://EC2_PUBLIC_IP:9000
 ```
 
 Default login:
@@ -425,7 +451,7 @@ admin
 admin
 ```
 
-Generate **Sonar token** and store it in Jenkins.
+Generate **Sonar Token** and store it in **Jenkins credentials**.
 
 ---
 
