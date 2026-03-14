@@ -4,19 +4,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.6.2",
+    "axios": "^1.13.5",
     "leaflet": "^1.9.4",
     "react": "^18.2.0",
     "react-awesome-button": "^7.0.5",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-loader-spinner": "^6.1.0",
-    "react-scripts": "5.0.1",
-    "react-select": "^5.8.0",
-    "web-vitals": "^2.1.4"
+    "react-select": "^5.8.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -45,7 +40,11 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^6.1.0"
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "gh-pages": "^6.1.0",
+    "react-scripts": "5.0.1"
   },
   "overrides": {
     "body-parser": "1.20.3",
