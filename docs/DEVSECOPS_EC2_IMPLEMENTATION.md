@@ -276,10 +276,6 @@ sudo systemctl status jenkins
 
 ---
 
-Your section is already good 👍 — I’ll just **clean it up slightly and format it better for documentation/README style** so it looks more professional.
-
----
-
 # 12. Access and Unlock Jenkins
 
 ## Access Jenkins
