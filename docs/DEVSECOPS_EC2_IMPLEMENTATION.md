@@ -180,6 +180,10 @@ sudo dnf update -y
 ```
 
 ---
+# git
+```bash
+sudo dnf install git -y
+```
 
 # 9️⃣ Install Docker
 
