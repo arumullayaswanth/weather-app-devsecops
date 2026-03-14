@@ -66,11 +66,11 @@ pipeline {
       steps {
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
           sh 'snyk auth $SNYK_TOKEN'
-          sh 'snyk test --severity-threshold=high'
+          sh 'snyk test --all-projects --severity-threshold=high'
+          sh 'snyk monitor --all-projects'
         }
       }
     }
-
     stage('Container Build') {
       steps {
         withCredentials([string(credentialsId: 'openweather-api-key', variable: 'REACT_APP_OPENWEATHER_API_KEY')]) {
@@ -85,6 +85,10 @@ pipeline {
 
     stage('Container Scan') {
       steps {
+        withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
+          sh 'snyk auth $SNYK_TOKEN'
+          sh 'snyk test --docker $IMAGE_FULL --severity-threshold=high'
+        }
         sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL $IMAGE_FULL'
       }
     }
