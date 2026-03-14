@@ -107,16 +107,18 @@ pipeline {
     stage('IaC Security Scan') {
       steps {
         sh '''
-        if [ ! -x .checkov-venv/bin/checkov ]; then
-          python3 -m venv .checkov-venv
-          . .checkov-venv/bin/activate
+        CHECKOV_VENV="$HOME/.checkov-venv"
+
+        if [ ! -x "$CHECKOV_VENV/bin/checkov" ]; then
+          python3 -m venv "$CHECKOV_VENV"
+          . "$CHECKOV_VENV/bin/activate"
           pip install --upgrade pip
           pip install checkov
         else
-          . .checkov-venv/bin/activate
+          . "$CHECKOV_VENV/bin/activate"
         fi
 
-        checkov -d k8s
+        "$CHECKOV_VENV/bin/checkov" -d k8s
         '''
       }
     }
