@@ -177,10 +177,6 @@ ssh -i key.pem ubuntu@EC2_PUBLIC_IP
 sudo apt update
 sudo apt upgrade -y
 ```
-
----
-Here is your **updated and corrected documentation** based on what actually worked on **Ubuntu 24.04 / EC2** (since the Jenkins repo method caused the GPG key error). I kept your structure but fixed the Jenkins installation method.
-
 ---
 
 # 9. Install Docker
