@@ -87,7 +87,7 @@ pipeline {
       steps {
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
           sh 'snyk auth $SNYK_TOKEN'
-          sh 'snyk test --docker $IMAGE_FULL --severity-threshold=high'
+          sh 'snyk test --docker $IMAGE_FULL --file=Dockerfile --severity-threshold=high'
         }
         sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL $IMAGE_FULL'
       }

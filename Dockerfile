@@ -6,12 +6,16 @@ ENV REACT_APP_OPENWEATHER_API_KEY=$REACT_APP_OPENWEATHER_API_KEY
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine
+
+USER root
+RUN apk upgrade --no-cache --available
+USER 101
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/build /usr/share/nginx/html
