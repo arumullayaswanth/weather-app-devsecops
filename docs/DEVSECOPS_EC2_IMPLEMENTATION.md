@@ -322,7 +322,6 @@ Install suggested plugins
 
 Jenkins will automatically install the commonly used plugins required for most CI/CD pipelines.
 
----
 
 ## Create Admin User
 
@@ -333,12 +332,6 @@ After the plugins are installed, create your administrator account:
 * **Email address**
 
 Click **Save and Continue**.
-
----
-
-## Jenkins Dashboard
-
-Once the setup is complete, the **Jenkins Dashboard** will open and Jenkins is ready to use.
 
 ---
 
