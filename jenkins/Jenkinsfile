@@ -180,6 +180,11 @@ pipeline {
 
         export KUBECONFIG="$HOME/.kube/config"
         kubectl apply -f k8s/namespace.yaml
+        kubectl -n weather-app create secret docker-registry ecr-registry-secret \
+          --docker-server="$ECR_REGISTRY" \
+          --docker-username=AWS \
+          --docker-password="$(aws ecr get-login-password --region $AWS_REGION)" \
+          --dry-run=client -o yaml | kubectl apply -f -
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/networkpolicy.yaml
         kubectl apply -f k8s/service.yaml

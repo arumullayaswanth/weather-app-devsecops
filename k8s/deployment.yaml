@@ -18,6 +18,8 @@ spec:
     spec:
       terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: ecr-registry-secret
       securityContext:
         fsGroup: 10001
         runAsUser: 10001
