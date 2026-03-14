@@ -3,12 +3,12 @@ pipeline {
 
   environment {
     AWS_REGION = 'us-east-1'
-    ECR_REGISTRY = '242201296943.dkr.ecr.us-east-1.amazonaws.com'
+    ECR_REGISTRY = '713939171080.dkr.ecr.us-east-1.amazonaws.com'
     ECR_REPOSITORY = 'weather-app'
     IMAGE_NAME = 'weather-app'
     IMAGE_TAG = "${env.BUILD_NUMBER}"
     IMAGE_FULL = "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
-    APP_URL = 'http://EC2_PUBLIC_IP:30080'
+    APP_URL = 'http://54.224.36.164:30080'
     CI = 'true'
   }
 
@@ -109,7 +109,7 @@ pipeline {
         GIT_REPO_NAME = 'weather-app-devsecops'
         GIT_EMAIL = 'Yaswanth.arumulla@gmail.com'
         GIT_USER_NAME = 'arumullayaswanth'
-        REPO_URL = '242201296943.dkr.ecr.us-east-1.amazonaws.com/weather-app'
+        REPO_URL = '713939171080.dkr.ecr.us-east-1.amazonaws.com/weather-app'
         YAML_FILE = 'deployment.yaml'
       }
 
