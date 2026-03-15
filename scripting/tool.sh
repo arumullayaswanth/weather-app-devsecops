@@ -34,8 +34,13 @@ dnf install -y \
   python3-virtualenv \
   unzip \
   tar \
-  curl \
   wget
+
+# Amazon Linux 2023 usually comes with curl-minimal already.
+# Do not force-install curl because it can conflict with curl-minimal.
+if ! command -v curl >/dev/null 2>&1; then
+  dnf install -y curl-minimal
+fi
 
 # Step 3: start Docker and enable it after reboot
 log "Enabling and starting Docker"
@@ -113,6 +118,13 @@ cp /etc/rancher/k3s/k3s.yaml "$JENKINS_HOME/.kube/config"
 chown -R jenkins:jenkins "$JENKINS_HOME/.kube"
 chmod 600 "$JENKINS_HOME/.kube/config"
 
+# Step 13a: give Kubernetes access to root for kubectl and helm in this script
+log "Configuring kubeconfig for root"
+mkdir -p /root/.kube
+cp /etc/rancher/k3s/k3s.yaml /root/.kube/config
+chmod 600 /root/.kube/config
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
 # Step 14: install Helm
 log "Installing Helm"
 curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -156,3 +168,4 @@ cat /var/lib/jenkins/secrets/initialAdminPassword || true
 
 log "Bootstrap completed"
 echo "Re-login may be needed for ec2-user Docker group changes."
+
