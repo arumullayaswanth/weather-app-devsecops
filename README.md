@@ -1,26 +1,19 @@
-# 🌦️ Weather App – DevSecOps
+# 🌤️ Weather App - DevSecOps
 
-✨ A modern weather application that provides real-time weather updates using a third-party API.
+![HTML](https://img.shields.io/badge/HTML-5-orange)
+![CSS](https://img.shields.io/badge/CSS-3-blue)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
 
-## 🌍 Experience the App
+A simple weather application that shows **live weather data** using a third-party API.
 
-| 🔗 Resource | Link |
-|-------------|------|
-| 🚀 Live Demo | https://rdinesh1667.github.io/weather-app/ |
-| 💻 GitHub Repository | https://github.com/arumullayaswanth/weather-app-devsecops |
+## 🚀 Live Demo
+[![Live Demo](https://img.shields.io/badge/Click-View%20App-green?style=for-the-badge)](https://rdinesh1667.github.io/weather-app/)
 
-👀 **Project Visitors**
+## 💻 GitHub Repo
+[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-black?style=for-the-badge&logo=github)](https://github.com/arumullayaswanth/weather-app-devsecops)
 
-![Visitors](https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops)
-
-## 🛠️ Tech Stack
-
-| Technology | Usage |
-|------------|-------|
-| HTML | Page Structure |
-| CSS | Styling |
-| JavaScript | Functionality |
-
+## 👀 Visitors
+![Visitors](https://komarev.com/ghpvc/?username=arumullayaswanth&color=blue)
 
 ## 👀 Visitors
 ![Visitor Count](https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops&color=blue)
