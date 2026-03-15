@@ -1,17 +1,3 @@
-# 🌤️ Weather App - DevSecOps
-
-## 📌 Project Overview
-This project is a **real-time weather application** built using JavaScript and a third-party weather API.
-
-## 🌍 Live Application
-👉 https://rdinesh1667.github.io/weather-app/
-
-## 📂 Source Code
-👉 https://github.com/arumullayaswanth/weather-app-devsecops
-
-## 👀 Project Views
-![Visitor Badge](https://komarev.com/ghpvc/?username=arumullayaswanth)
-
 
 
 
