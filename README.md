@@ -1,24 +1,37 @@
-# 🌤️ Weather App - DevSecOps
+<div align="center">
 
-![HTML](https://img.shields.io/badge/HTML-5-orange)
-![CSS](https://img.shields.io/badge/CSS-3-blue)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
+# 🌦️ Weather App – DevSecOps
 
-A simple weather application that shows **live weather data** using a third-party API.
+### 🚀 Real-time Weather Application using a Third-Party API
 
-## 🚀 Live Demo
-[![Live Demo](https://img.shields.io/badge/Click-View%20App-green?style=for-the-badge)](https://rdinesh1667.github.io/weather-app/)
+<img src="https://img.shields.io/badge/HTML-5-orange?style=for-the-badge&logo=html5">
+<img src="https://img.shields.io/badge/CSS-3-blue?style=for-the-badge&logo=css3">
+<img src="https://img.shields.io/badge/JavaScript-ES6-yellow?style=for-the-badge&logo=javascript">
 
-## 💻 GitHub Repo
-[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-black?style=for-the-badge&logo=github)](https://github.com/arumullayaswanth/weather-app-devsecops)
+<br><br>
 
-## 👀 Visitors
-![Visitors](https://komarev.com/ghpvc/?username=arumullayaswanth&color=blue)
+### 🌍 Live Demo
 
-## 👀 Visitors
-![Visitor Count](https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops&color=blue)
+<a href="https://rdinesh1667.github.io/weather-app/">
+<img src="https://img.shields.io/badge/OPEN-WEATHER%20APP-brightgreen?style=for-the-badge">
+</a>
 
-## 🛠️ Tech Stack
+<br><br>
+
+### 💻 GitHub Repository
+
+<a href="https://github.com/arumullayaswanth/weather-app-devsecops">
+<img src="https://img.shields.io/badge/GitHub-View%20Source-black?style=for-the-badge&logo=github">
+</a>
+
+<br><br>
+
+### 👀 Visitors
+
+<img src="https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops&style=for-the-badge&color=blue">
+
+</div>
+
 
 # UI View <br>
 ![Weather Report](https://raw.github.com/Rdinesh1667/weather-app/master/src/images/weather-app-1.png) <br>
