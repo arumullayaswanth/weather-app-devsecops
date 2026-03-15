@@ -1,20 +1,25 @@
+# 🌦️ Weather App – DevSecOps
 
+✨ A modern weather application that provides real-time weather updates using a third-party API.
 
-# 🌤️ Weather App - DevSecOps
+## 🌍 Experience the App
 
-A simple weather application that fetches **real-time weather data** using a third-party API.
+| 🔗 Resource | Link |
+|-------------|------|
+| 🚀 Live Demo | https://rdinesh1667.github.io/weather-app/ |
+| 💻 GitHub Repository | https://github.com/arumullayaswanth/weather-app-devsecops |
 
-### 🚀 Live Demo
-🔗 https://rdinesh1667.github.io/weather-app/
+👀 **Project Visitors**
 
-### 💻 GitHub Repository
-🔗 https://github.com/arumullayaswanth/weather-app-devsecops
+![Visitors](https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops)
 
-### 👀 Visitors
-![Visitor Count](https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops&color=blue)
+## 🛠️ Tech Stack
 
-</div>
-
+| Technology | Usage |
+|------------|-------|
+| HTML | Page Structure |
+| CSS | Styling |
+| JavaScript | Functionality |
 
 
 ## 👀 Visitors
