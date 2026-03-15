@@ -1,27 +1,5 @@
 
 
-
-
-# 🌤️ Weather App - DevSecOps
-
-![HTML](https://img.shields.io/badge/HTML-5-orange)
-![CSS](https://img.shields.io/badge/CSS-3-blue)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
-
-A simple weather application that shows **live weather data** using a third-party API.
-
-## 🚀 Live Demo
-[![Live Demo](https://img.shields.io/badge/Click-View%20App-green?style=for-the-badge)](https://rdinesh1667.github.io/weather-app/)
-
-## 💻 GitHub Repo
-[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-black?style=for-the-badge&logo=github)](https://github.com/arumullayaswanth/weather-app-devsecops)
-
-## 👀 Visitors
-![Visitors](https://komarev.com/ghpvc/?username=arumullayaswanth&color=blue)
-
-
-<div align="center">
-
 # 🌤️ Weather App - DevSecOps
 
 A simple weather application that fetches **real-time weather data** using a third-party API.
