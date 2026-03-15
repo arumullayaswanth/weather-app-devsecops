@@ -1,9 +1,11 @@
-
+<div align="center">
 
 # 🌦️ Weather App – DevSecOps
 
 <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=26&duration=3000&pause=1000&color=2F81F7&center=true&vCenter=true&width=500&lines=Real-Time+Weather+Application;Built+with+HTML+CSS+JavaScript;Powered+by+Weather+API;DevSecOps+Enabled+Project" />
 
+<br>
+<br><br>
 
 ### 🚀 Live Demo
 
@@ -26,6 +28,14 @@
 <img src="https://komarev.com/ghpvc/?username=arumullayaswanth&repo=weather-app-devsecops&style=for-the-badge&color=blue">
 
 </div>
+
+---
+
+---
+
+## ⭐ Support
+
+If you like this project, consider giving it a **⭐ on GitHub**.
 
 ---
 
